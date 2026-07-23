@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>じゃんけん対決</title>
+<meta name="description" content="サイトのマスコットとじゃんけんで対決できるミニゲームです。">
+
+<!--
+  ============================================================
+  GitHub Pages 公開メモ
+  ============================================================
+  ・このファイルは index.html として、リポジトリの直下
+   （または /docs フォルダ）に置いてください。
+  ・写真は同じフォルダに以下の名前で置きます。
+      character-neutral.jpg（必須・通常時の顔）
+      character-win.jpg   （任意・相手が勝った時の顔）
+      character-lose.jpg  （任意・相手が負けた時の顔）
+    1枚しか用意できない場合は character-neutral.jpg だけでOKです。
+  ・公開後のURLは https://ユーザー名.github.io/リポジトリ名/ になります。
+    （詳しい設定手順は下のチャット本文で説明しています）
+  ・元のHPに戻るリンクは、下の <a class="jkg-back"> の href を
+    実際のHPのURLに書き換えてください。
+  ============================================================
+-->
+
+<style>
+  :root {
+    --jkg-navy: #14172c;
+    --jkg-navy-deep: #0c0e1d;
+    --jkg-ivory: #fff8ec;
+    --jkg-gold: #f2b632;
+    --jkg-coral: #ff6f59;
+    --jkg-teal: #2f9e8f;
+    --jkg-ink: #1c1e2e;
+    --jkg-muted: #8a8fa8;
+  }
+  * , *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: radial-gradient(circle at 50% -10%, #232748 0%, var(--jkg-navy-deep) 65%);
+    font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Yu Gothic', sans-serif;
+  }
+  .jkg-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 12px;
+  }
+  .jkg-back {
+    display: inline-block;
+    color: var(--jkg-muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    border-bottom: 1px dashed var(--jkg-muted);
+    padding-bottom: 2px;
+  }
+  .jkg-back:hover { color: var(--jkg-ivory); border-color: var(--jkg-ivory); }
+
+  .jkg-root { display: flex; justify-content: center; }
+  .jkg-root *, .jkg-root *::before, .jkg-root *::after { box-sizing: border-box; }
+
+  .jkg-card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--jkg-navy);
+    border-radius: 28px;
+    padding: 0 20px 24px;
+    color: var(--jkg-ivory);
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.55);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .jkg-header {
+    position: relative;
+    background: var(--jkg-gold);
+    color: var(--jkg-navy-deep);
+    margin: 0 -20px 20px;
+    padding: 18px 20px 22px;
+    border-bottom: 3px dashed rgba(20,23,44,0.35);
+  }
+  .jkg-header-eyebrow { display: block; font-size: 11px; letter-spacing: 0.3em; font-weight: 700; opacity: 0.7; }
+  .jkg-header-title {
+    margin: 2px 0 0;
+    font-family: 'Kaisei Decol', 'Hiragino Mincho ProN', serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .jkg-header-notch { position: absolute; bottom: -12px; width: 24px; height: 24px; background: var(--jkg-navy); border-radius: 50%; }
+  .jkg-notch-left { left: -12px; }
+  .jkg-notch-right { right: -12px; }
+
+  .jkg-vs-area { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 18px; }
+  .jkg-fighter { flex: 1; text-align: center; }
+  .jkg-photo-frame {
+    width: 100px; height: 100px; margin: 0 auto 8px;
+    border-radius: 20px; overflow: hidden;
+    background: var(--jkg-navy-deep);
+    border: 3px solid rgba(255,248,236,0.15);
+  }
+  .jkg-you { display: flex; align-items: center; justify-content: center; }
+  .jkg-silhouette { width: 60%; height: 60%; fill: var(--jkg-muted); }
+  .jkg-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .jkg-fighter-name { font-size: 13px; font-weight: 700; color: var(--jkg-ivory); opacity: 0.85; }
+
+  .jkg-vs-burst { position: relative; width: 64px; height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .jkg-burst-svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: var(--jkg-coral); }
+  .jkg-vs-text { position: relative; font-family: 'Kaisei Decol', serif; font-weight: 700; font-size: 16px; color: var(--jkg-navy-deep); }
+
+  .jkg-scoreboard { display: flex; justify-content: space-around; background: var(--jkg-navy-deep); border-radius: 14px; padding: 10px 6px; margin-bottom: 16px; }
+  .jkg-score-item { text-align: center; }
+  .jkg-score-num { display: block; font-family: 'Kaisei Decol', serif; font-size: 22px; font-weight: 700; color: var(--jkg-gold); line-height: 1.1; }
+  .jkg-score-label { font-size: 11px; color: var(--jkg-muted); letter-spacing: 0.05em; }
+
+  .jkg-stage { text-align: center; min-height: 28px; margin-bottom: 10px; }
+  .jkg-call { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: 0.02em; white-space: pre-line; }
+  .jkg-call.jkg-pon { color: var(--jkg-coral); }
+
+  .jkg-bubble {
+    position: relative; background: var(--jkg-ivory); color: var(--jkg-ink);
+    border-radius: 16px; padding: 14px 16px; margin-bottom: 18px;
+    text-align: center; font-weight: 700; font-size: 14.5px; line-height: 1.5;
+    white-space: pre-line;
+  }
+  .jkg-bubble::after {
+    content: ""; position: absolute; top: -8px; right: 34px;
+    border-width: 0 8px 8px 8px; border-style: solid;
+    border-color: transparent transparent var(--jkg-ivory) transparent;
+  }
+
+  .jkg-hands { display: flex; gap: 10px; justify-content: center; }
+  .jkg-hand-btn {
+    flex: 1; max-width: 120px; background: var(--jkg-navy-deep);
+    border: 2px solid transparent; border-radius: 16px; color: var(--jkg-ivory);
+    padding: 14px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .jkg-hand-emoji { font-size: 30px; }
+  .jkg-hand-label { font-size: 12px; font-weight: 700; color: var(--jkg-muted); }
+  .jkg-hand-btn:hover:not(:disabled) { border-color: var(--jkg-gold); transform: translateY(-3px); }
+  .jkg-hand-btn:focus-visible { outline: 3px solid var(--jkg-teal); outline-offset: 2px; }
+  .jkg-hand-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .jkg-reset {
+    display: block; margin: 16px auto 0; background: transparent;
+    border: 2px solid var(--jkg-teal); color: var(--jkg-teal);
+    font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 999px; cursor: pointer;
+  }
+  .jkg-reset:hover { background: var(--jkg-teal); color: var(--jkg-navy-deep); }
+  .jkg-reset:focus-visible { outline: 3px solid var(--jkg-gold); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) { .jkg-hand-btn, .jkg-reset { transition: none; } }
+
+  @keyframes jkg-pop { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .jkg-bubble.jkg-show { animation: jkg-pop 0.22s ease-out; }
+</style>
+</head>
+<body>
+<div class="jkg-page">
+
+  <!-- ▼ href を実際のHPのURL（または相対パス "../index.html" 等）に書き換えてください -->
+  <a class="jkg-back" href="https://example.com">← サイトトップに戻る</a>
+
+  <div class="jkg-root">
+    <div class="jkg-card">
+
+      <div class="jkg-header">
+        <span class="jkg-header-eyebrow">CHALLENGE</span>
+        <h1 class="jkg-header-title">じゃんけん対決</h1>
+        <div class="jkg-header-notch jkg-notch-left"></div>
+        <div class="jkg-header-notch jkg-notch-right"></div>
+      </div>
+
+      <div class="jkg-vs-area">
+        <div class="jkg-fighter">
+          <div class="jkg-photo-frame jkg-you">
+            <svg viewBox="0 0 100 100" class="jkg-silhouette" aria-hidden="true">
+              <circle cx="50" cy="36" r="20"/>
+              <path d="M12 92c0-24 17-38 38-38s38 14 38 38"/>
+            </svg>
+          </div>
+          <div class="jkg-fighter-name">あなた</div>
+        </div>
+
+        <div class="jkg-vs-burst">
+          <svg viewBox="0 0 120 120" class="jkg-burst-svg" aria-hidden="true">
+            <polygon points="60,2 72,34 104,20 82,48 118,54 82,66 104,94 72,80 60,118 48,80 16,94 38,66 2,54 38,48 16,20 48,34"/>
+          </svg>
+          <span class="jkg-vs-text">VS</span>
+        </div>
+
+        <div class="jkg-fighter">
+          <div class="jkg-photo-frame jkg-char">
+            <img id="jkgPhoto" class="jkg-photo" src="character-neutral.jpg" alt="対戦相手の写真" />
+          </div>
+          <div class="jkg-fighter-name" id="jkgCharName">対戦相手</div>
+        </div>
+      </div>
+
+      <div class="jkg-scoreboard" aria-live="off">
+        <div class="jkg-score-item">
+          <span class="jkg-score-num" id="jkgWinCount">0</span>
+          <span class="jkg-score-label">かち</span>
+        </div>
+        <div class="jkg-score-item">
+          <span class="jkg-score-num" id="jkgDrawCount">0</span>
+          <span class="jkg-score-label">あいこ</span>
+        </div>
+        <div class="jkg-score-item">
+          <span class="jkg-score-num" id="jkgLoseCount">0</span>
+          <span class="jkg-score-label">まけ</span>
+        </div>
+      </div>
+
+      <div class="jkg-stage">
+        <p class="jkg-call" id="jkgCall">手を選んでね!</p>
+      </div>
+
+      <div class="jkg-bubble" id="jkgBubble" hidden>
+        <p class="jkg-bubble-text" id="jkgBubbleText"></p>
+      </div>
+
+      <div class="jkg-hands" id="jkgHands">
+        <button class="jkg-hand-btn" data-hand="gu" aria-label="グー">
+          <span class="jkg-hand-emoji">✊</span><span class="jkg-hand-label">グー</span>
+        </button>
+        <button class="jkg-hand-btn" data-hand="choki" aria-label="チョキ">
+          <span class="jkg-hand-emoji">✌️</span><span class="jkg-hand-label">チョキ</span>
+        </button>
+        <button class="jkg-hand-btn" data-hand="pa" aria-label="パー">
+          <span class="jkg-hand-emoji">🖐️</span><span class="jkg-hand-label">パー</span>
+        </button>
+      </div>
+
+      <button class="jkg-reset" id="jkgReset" hidden>もう一度あそぶ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  /* ============ 設定エリア（ここを書き換えてカスタマイズ） ============ */
+  var CHARACTER_NAME = "対戦相手";
+
+  var WIN_COMMENTS = [
+    "うわ、やられた〜!今回は完敗です。",
+    "まいった!センスあるね、それ。",
+    "今日のところは君の勝ちだ!次は負けないぞ〜。",
+    "え、強すぎない?ちょっと惚れた。"
+  ];
+  var LOSE_COMMENTS = [
+    "よっしゃー!僕の勝ち!\nまた挑戦してね。",
+    "ふっふっふ、まだまだだね(笑)",
+    "勝負は時の運…なんて言ってみたけど、実力です!",
+    "いい手だったけど、一歩及ばずかな〜。"
+  ];
+  var DRAW_COMMENTS = [
+    "おっと、あいこ!息ぴったりだね。",
+    "せーの、で気が合っちゃったね。もう一回!",
+    "あいこ!これは決着つくまでやろうか。"
+  ];
+  /* ================================================================ */
+
+  var HANDS = { gu: "✊", choki: "✌️", pa: "🖐️" };
+  var BEATS = { gu: "choki", choki: "pa", pa: "gu" };
+
+  var callEl = document.getElementById("jkgCall");
+  var bubble = document.getElementById("jkgBubble");
+  var bubbleText = document.getElementById("jkgBubbleText");
+  var handButtons = document.querySelectorAll(".jkg-hand-btn");
+  var resetBtn = document.getElementById("jkgReset");
+  var photo = document.getElementById("jkgPhoto");
+  var nameEl = document.getElementById("jkgCharName");
+
+  var winCountEl = document.getElementById("jkgWinCount");
+  var drawCountEl = document.getElementById("jkgDrawCount");
+  var loseCountEl = document.getElementById("jkgLoseCount");
+  var score = { win: 0, draw: 0, lose: 0 };
+
+  nameEl.textContent = CHARACTER_NAME;
+
+  function setPhoto(state) {
+    var candidates = {
+      win: "character-lose.jpg",
+      lose: "character-win.jpg",
+      neutral: "character-neutral.jpg"
+    };
+    var src = candidates[state] || candidates.neutral;
+    photo.onerror = function () {
+      photo.onerror = null;
+      photo.src = "character-neutral.jpg";
+    };
+    photo.src = src;
+  }
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function randomHand() { var keys = Object.keys(HANDS); return keys[Math.floor(Math.random() * keys.length)]; }
+  function judge(player, cpu) {
+    if (player === cpu) return "draw";
+    return BEATS[player] === cpu ? "win" : "lose";
+  }
+  function setHandsDisabled(disabled) { handButtons.forEach(function (btn) { btn.disabled = disabled; }); }
+
+  function showBubble(text) {
+    bubbleText.textContent = text;
+    bubble.hidden = false;
+    bubble.classList.remove("jkg-show");
+    void bubble.offsetWidth;
+    bubble.classList.add("jkg-show");
+  }
+
+  function playRound(playerHand) {
+    setHandsDisabled(true);
+    bubble.hidden = true;
+    callEl.classList.remove("jkg-pon");
+
+    var steps = ["さいしょはグー", "じゃんけん…", "ぽん!"];
+    var i = 0;
+    callEl.textContent = steps[i];
+
+    var timer = setInterval(function () {
+      i++;
+      if (i < steps.length) {
+        callEl.textContent = steps[i];
+        if (i === steps.length - 1) callEl.classList.add("jkg-pon");
+        return;
+      }
+      clearInterval(timer);
+      resolveRound(playerHand);
+    }, 550);
+  }
+
+  function resolveRound(playerHand) {
+    var cpuHand = randomHand();
+    var result = judge(playerHand, cpuHand);
+
+    var resultLabel = { win: "あなたの勝ち!", lose: "あなたの負け…", draw: "あいこ!" }[result];
+    callEl.textContent = "あなた " + HANDS[playerHand] + "  ―  " + HANDS[cpuHand] + " " + CHARACTER_NAME + "\n" + resultLabel;
+
+    setPhoto(result === "draw" ? "neutral" : result);
+
+    var comment = result === "win" ? pick(WIN_COMMENTS)
+                : result === "lose" ? pick(LOSE_COMMENTS)
+                : pick(DRAW_COMMENTS);
+    showBubble(comment);
+
+    if (result === "win") { score.win++; winCountEl.textContent = score.win; }
+    else if (result === "lose") { score.lose++; loseCountEl.textContent = score.lose; }
+    else { score.draw++; drawCountEl.textContent = score.draw; }
+
+    setHandsDisabled(false);
+    resetBtn.hidden = false;
+  }
+
+  handButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () { playRound(btn.getAttribute("data-hand")); });
+  });
+
+  resetBtn.addEventListener("click", function () {
+    score = { win: 0, draw: 0, lose: 0 };
+    winCountEl.textContent = "0";
+    drawCountEl.textContent = "0";
+    loseCountEl.textContent = "0";
+    callEl.textContent = "手を選んでね!";
+    callEl.classList.remove("jkg-pon");
+    bubble.hidden = true;
+    setPhoto("neutral");
+    resetBtn.hidden = true;
+  });
+})();
+</script>
+</body>
+</html>
